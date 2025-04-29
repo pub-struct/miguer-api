@@ -24,7 +24,19 @@ pub struct CreatePostData {
     ))]
     pub title: String,
 }
-
+#[derive(Debug, Deserialize, Validate, Clone)]
+pub struct UpdatePostData {
+    #[validate(length(
+        min = 5,
+        message = "Voce precisa escrever um artigo com pelo menos 5 caracteres"
+    ))]
+    pub content: Option<String>,
+    #[validate(length(
+        min = 5,
+        message = "Voce precisa escrever um titulo com pelo menos 5 caracteres"
+    ))]
+    pub title: Option<String>,
+}
 #[debug_handler]
 pub async fn index(
     State(_ctx): State<AppContext>,
@@ -54,8 +66,25 @@ pub async fn remove(
 }
 
 #[debug_handler]
-pub async fn update(_auth: auth::JWT, State(_ctx): State<AppContext>) -> Result<Response> {
-    format::empty()
+pub async fn update(
+    _auth: auth::JWT,
+    State(_ctx): State<AppContext>,
+    Path(id): Path<i32>,
+    JsonValidate(payload): JsonValidate<UpdatePostData>,
+) -> Result<Response> {
+    let post_model = posts::Model::by_id(id).await.one(&_ctx.db).await?;
+    let mut post: posts::ActiveModel = post_model.unwrap().into_active_model();
+    if let Some(content) = payload.content {
+        post.content = Set(content);
+    }
+    if let Some(title) = payload.title {
+        post.title = Set(title);
+    }
+    let _ = post.patch(&_ctx.db).await.map_err(|model_err| {
+        tracing::error!(error.message = %model_err, "Failed to patch post model");
+        Error::InternalServerError
+    });
+    format::text("Post Updated")
 }
 
 #[debug_handler]

@@ -107,13 +107,15 @@ impl Model {
     }
 }
 
-// implement your write-oriented logic here
 impl ActiveModel {
     pub async fn remove(self, db: &DatabaseConnection) -> ModelResult<()> {
         self.delete(db).await?;
         Ok(())
     }
+    pub async fn patch(self, db: &DatabaseConnection) -> ModelResult<()> {
+        self.update(db).await?;
+        Ok(())
+    }
 }
 
-// implement your custom finders, selectors oriented logic here
 impl Entity {}
