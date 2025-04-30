@@ -1,5 +1,5 @@
-use miguer_api::app::App;
 use loco_rs::testing::prelude::*;
+use miguer_api::app::App;
 use serial_test::serial;
 
 #[tokio::test]
@@ -14,4 +14,3 @@ async fn can_get_posts() {
     })
     .await;
 }
-

@@ -10,7 +10,7 @@ use axum::{
     extract::Query,
     http::{HeaderMap, StatusCode},
 };
-use axum_client_ip::{InsecureClientIp, SecureClientIp};
+use axum_client_ip::InsecureClientIp;
 use chrono::{Duration, Utc};
 use loco_rs::prelude::*;
 use serde::Deserialize;
@@ -130,7 +130,7 @@ pub async fn increase_views(
     let now = Utc::now();
     let cutoff = now - Duration::hours(6);
 
-    let mut post = posts::Entity::find_by_id(id)
+    let post = posts::Entity::find_by_id(id)
         .one(&_ctx.db)
         .await?
         .ok_or(Error::NotFound)?;
