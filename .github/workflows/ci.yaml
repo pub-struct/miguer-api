@@ -20,7 +20,7 @@ jobs:
           script: |
             cd /home/miguer/miguer-api/
             git pull
-            cargo build --release
+            /home/miguer/.cargo/bin/cargo build --release
             rm -rf miguer_api-cli
             cp target/release/miguer_api-cli miguer_api-cli
-            pm2 startOrReload ecosystem.config.js --update-env
+            /home/miguer/.nvm/versions/node/v22.15.0/bin/pm2 startOrReload ecosystem.config.js --update-env
