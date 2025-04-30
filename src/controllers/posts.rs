@@ -1,8 +1,16 @@
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::unnecessary_struct_initialization)]
 #![allow(clippy::unused_async)]
-use crate::models::_entities::posts::{self};
-use axum::{debug_handler, extract::Query, http::StatusCode};
+use crate::models::{
+    _entities::post_views,
+    _entities::posts::{self},
+};
+use axum::{
+    debug_handler,
+    extract::{Query, Request},
+    http::{header, HeaderMap, StatusCode},
+};
+use chrono::{Duration, Utc};
 use loco_rs::prelude::*;
 use serde::Deserialize;
 
@@ -23,6 +31,8 @@ pub struct CreatePostData {
         message = "Voce precisa escrever um titulo com pelo menos 5 caracteres"
     ))]
     pub title: String,
+    #[validate(length(min = 1, message = "Voce precisa escrever pelo menos uma tag"))]
+    tags: Vec<String>,
 }
 #[derive(Debug, Deserialize, Validate, Clone)]
 pub struct UpdatePostData {
@@ -97,13 +107,40 @@ pub async fn create(
         title: Set(post.title),
         content: Set(post.content),
         views: Set(0),
+        tags: Set(post.tags),
         ..Default::default()
     };
+
     let saved_post = new_post.insert(&_ctx.db).await.map_err(|db_err| {
         eprintln!("Database error creating post: {:?}", db_err);
+        println!("{:?}", db_err);
         Error::InternalServerError
     })?;
     Ok((StatusCode::CREATED, Json(saved_post)).into_response())
+}
+#[debug_handler]
+pub async fn increase_views(
+    State(_ctx): State<AppContext>,
+    Path(id): Path<i32>,
+    req: Request,
+) -> Result<Response> {
+    let post_model = posts::Model::by_id(id)
+        .await
+        .one(&_ctx.db)
+        .await?
+        .ok_or_else(|| Error::NotFound)?;
+    let cutoff = Utc::now() - Duration::hours(6);
+    println!("{:?}", req.headers());
+    // let ip = headers
+    //     .get()
+    //     .and_then(|value| value.to_str().ok())
+    //     .and_then(|x_forwarded| x_forwarded.split(',').next())
+    //     .unwrap_or_else(|| String::from("default-ip"));
+    // let already_viewed = post_model
+    //     .find_related(post_views::Entity)
+    //     .filter(post_views::Column::IpAddress.eq(ip));
+
+    format::text("Views Increased")
 }
 
 pub fn routes() -> Routes {
@@ -114,4 +151,5 @@ pub fn routes() -> Routes {
         .add("/{id}", get(retrieve))
         .add("/{id}", delete(remove))
         .add("/{id}", patch(update))
+        .add("/{id}/views", post(increase_views))
 }

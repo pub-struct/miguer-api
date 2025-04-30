@@ -14,7 +14,17 @@ pub struct Model {
     #[sea_orm(column_type = "Text")]
     pub content: String,
     pub views: i32,
+    pub tags: Vec<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
+pub enum Relation {
+    #[sea_orm(has_many = "super::post_views::Entity")]
+    PostViews,
+}
+
+impl Related<super::post_views::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::PostViews.def()
+    }
+}
