@@ -27,7 +27,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           source: target/release/miguer_api-cli
-          target: /home/locoapp/miguer-api/
+          target: /home/miguer/miguer-api/
 
       - name: Restart service via SSH
         uses: appleboy/ssh-action@v1.0.0
