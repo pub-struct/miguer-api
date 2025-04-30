@@ -6,7 +6,7 @@ examples/myapp
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
-
+miguer_api-cli
 *.sqlite3
 *.sqlite3-wal
 *.sqlite3-shm
