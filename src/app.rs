@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use axum_client_ip::SecureClientIpSource;
 use loco_rs::{
     app::{AppContext, Hooks, Initializer},
     bgworker::{BackgroundWorker, Queue},
@@ -49,6 +50,11 @@ impl Hooks for App {
         AppRoutes::with_default_routes()
             .add_route(controllers::posts::routes())
             .add_route(controllers::auth::routes())
+    }
+
+    async fn after_routes(router: axum::Router, _ctx: &AppContext) -> Result<axum::Router> {
+        let router = router.layer(SecureClientIpSource::ConnectInfo.into_extension());
+        Ok(router)
     }
     async fn connect_workers(ctx: &AppContext, queue: &Queue) -> Result<()> {
         queue.register(DownloadWorker::build(ctx)).await?;

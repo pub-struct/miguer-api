@@ -7,9 +7,10 @@ use crate::models::{
 };
 use axum::{
     debug_handler,
-    extract::{Query, Request},
-    http::{header, HeaderMap, StatusCode},
+    extract::Query,
+    http::{HeaderMap, StatusCode},
 };
+use axum_client_ip::{InsecureClientIp, SecureClientIp};
 use chrono::{Duration, Utc};
 use loco_rs::prelude::*;
 use serde::Deserialize;
@@ -122,23 +123,63 @@ pub async fn create(
 pub async fn increase_views(
     State(_ctx): State<AppContext>,
     Path(id): Path<i32>,
-    req: Request,
+    insecure_ip: InsecureClientIp,
+    headers: HeaderMap,
 ) -> Result<Response> {
-    let post_model = posts::Model::by_id(id)
-        .await
+    let ip_str = insecure_ip.0.to_string();
+    let now = Utc::now();
+    let cutoff = now - Duration::hours(6);
+
+    let mut post = posts::Entity::find_by_id(id)
         .one(&_ctx.db)
         .await?
-        .ok_or_else(|| Error::NotFound)?;
-    let cutoff = Utc::now() - Duration::hours(6);
-    println!("{:?}", req.headers());
-    // let ip = headers
-    //     .get()
-    //     .and_then(|value| value.to_str().ok())
-    //     .and_then(|x_forwarded| x_forwarded.split(',').next())
-    //     .unwrap_or_else(|| String::from("default-ip"));
-    // let already_viewed = post_model
-    //     .find_related(post_views::Entity)
-    //     .filter(post_views::Column::IpAddress.eq(ip));
+        .ok_or(Error::NotFound)?;
+
+    let recent_view = post_views::Entity::find()
+        .filter(post_views::Column::PostId.eq(post.id))
+        .filter(post_views::Column::IpAddress.eq(ip_str.clone()))
+        .filter(post_views::Column::CreatedAt.gt(cutoff))
+        .one(&_ctx.db)
+        .await?;
+
+    if recent_view.is_none() {
+        let user_agent = headers
+            .get("user-agent")
+            .and_then(|v| v.to_str().ok())
+            .map(|s| s.to_string());
+
+        let referer = headers
+            .get("referer")
+            .and_then(|v| v.to_str().ok())
+            .map(|s| s.to_string());
+
+        let device_type = user_agent
+            .as_ref()
+            .map(|ua| {
+                if ua.contains("Mobile") {
+                    Some("mobile")
+                } else if ua.contains("Tablet") {
+                    Some("tablet")
+                } else {
+                    Some("desktop")
+                }
+            })
+            .flatten()
+            .map(String::from);
+
+        let view = post_views::ActiveModel {
+            post_id: Set(post.id),
+            ip_address: Set(ip_str),
+            user_agent: Set(user_agent),
+            referer: Set(referer),
+            device_type: Set(device_type),
+            ..Default::default()
+        };
+        view.insert(&_ctx.db).await?;
+        let mut active_post = post.clone().into_active_model().clone();
+        active_post.views = Set(post.views + 1);
+        active_post.update(&_ctx.db).await?;
+    }
 
     format::text("Views Increased")
 }
