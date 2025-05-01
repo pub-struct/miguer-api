@@ -47,6 +47,7 @@ pub struct UpdatePostData {
         message = "Voce precisa escrever um titulo com pelo menos 5 caracteres"
     ))]
     pub title: Option<String>,
+    pub tags: Option<Vec<String>>,
 }
 #[debug_handler]
 pub async fn index(
@@ -90,6 +91,9 @@ pub async fn update(
     }
     if let Some(title) = payload.title {
         post.title = Set(title);
+    }
+    if let Some(tags) = payload.tags {
+        post.tags = Set(tags);
     }
     let _ = post.patch(&_ctx.db).await.map_err(|model_err| {
         tracing::error!(error.message = %model_err, "Failed to patch post model");
