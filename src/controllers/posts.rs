@@ -140,12 +140,12 @@ pub async fn increase_views(
         .ok_or(Error::NotFound)?;
 
     let recent_view = post_views::Entity::find()
-        .filter(post_views::Column::PostId.eq(post.id))
-        .filter(post_views::Column::IpAddress.eq(ip_str.clone()))
+        .filter(post_views::Column::PostId.eq(post.id)) // <-- Verifica o ID do POST atual
+        .filter(post_views::Column::IpAddress.eq(ip_str.clone())) // <-- Verifica o IP atual
         .filter(post_views::Column::CreatedAt.gt(cutoff))
         .one(&_ctx.db)
         .await?;
-
+    println!("here is it: {:?}", recent_view);
     if recent_view.is_none() {
         let user_agent = headers
             .get("user-agent")
