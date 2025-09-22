@@ -2,7 +2,7 @@
 LOCO_ENV = "production"
 PORT = "3000"
 RUST_LOG = "info,loco=info"
-DATABASE_URL=postgres://postgres:Jnza1mY0o2qX0UQCj3P9OrwZ2tqshzXBIoa5iumAVHiIxoOslKnPrlavvkfLWLH6@kooskckco84sskg80s8oksk8:5432/postgres
+DATABASE_URL="postgres://postgres:Jnza1mY0o2qX0UQCj3P9OrwZ2tqshzXBIoa5iumAVHiIxoOslKnPrlavvkfLWLH6@kooskckco84sskg80s8oksk8:5432/postgres"
 
 
 
