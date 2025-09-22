@@ -1,17 +1,20 @@
+# Define environment variables
 [variables]
 LOCO_ENV = "production"
 PORT = "3000"
 RUST_LOG = "info,loco=info"
+# Make sure your DATABASE_URL is quoted correctly
 DATABASE_URL="postgres://postgres:Jnza1mY0o2qX0UQCj3P9OrwZ2tqshzXBIoa5iumAVHiIxoOslKnPrlavvkfLWLH6@kooskckco84sskg80s8oksk8:5432/postgres"
 
-
-
+# Install necessary system packages and Rust tools
 [phases.install]
 nixPkgs = ["openssl", "pkg-config", "libpq"]
 cmds = ["cargo install sea-orm-cli"]
 
+# Build the application
 [phases.build]
 cmds = ["cargo build --release"]
 
-[phases.start]
-cmd = "sea-orm-cli migrate up && ./target/release/miguer_api-cli"
+# Define the final command to run the application
+[start]
+cmd = "sea-orm-cli migrate up && ./target/release/miguer_api-cli start"
