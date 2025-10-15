@@ -8,4 +8,5 @@ FROM debian:bookworm-slim
 WORKDIR /usr/app
 COPY --from=builder /usr/src/config config
 COPY --from=builder /usr/src/target/release/miguer_api-cli miguer_api-cli
+RUN echo "DATABASE_URL=${DATABASE_URL}" > /usr/app/.env
 ENTRYPOINT ["/usr/app/miguer_api-cli", "start", "--environment", "production"]
